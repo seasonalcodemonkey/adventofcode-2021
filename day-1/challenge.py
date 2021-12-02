@@ -29,7 +29,6 @@ if __name__ == "__main__":
     if isinstance(depths, Exception):
         print("Could not load from %s: %s" % (filename, depths)) 
     else:
-        print("len(depths): %i" % len(depths))
         print("Total increases: %i" % depth_increases(depths))
 
 
