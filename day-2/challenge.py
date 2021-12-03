@@ -52,10 +52,13 @@ def calculate_position_aim(commands):
 if __name__ == "__main__":
     filename = "input"
     commands = load_input(filename)
+    
+    if isinstance(commands, Exception):
+        print("Could not load from %s: %s" % (filename, commands)) 
+    else:
+        position = calculate_position(commands)
+        print("%s multiplied is %i" % (position, position[0] * position[1]))
 
-    position = calculate_position(commands)
-    print("%s multiplied is %i" % (position, position[0] * position[1]))
-
-    position = calculate_position_aim(commands)
-    print("%s multiplied is %i" % (position, position[0] * position[1]))
+        position = calculate_position_aim(commands)
+        print("%s multiplied is %i" % (position, position[0] * position[1]))
 
