@@ -62,10 +62,10 @@ def power_consumption(input):
     return (gamma, epsilon)
 
 def life_support(input):
-    criterion = {lambda a, b: a > b, lambda a, b: b > a }
+    criteria = {lambda a, b: a > b, lambda a, b: b > a }
     result = []
 
-    for criteria in criterion:
+    for criterion in criteria:
         selection = input
         bit_i = 0
 
@@ -75,16 +75,15 @@ def life_support(input):
             zero_count, one_count = count[0][0], count[0][1]
             index = count[0][2]
             
-            bit = 0 if criteria(zero_count, one_count) else 1
-            bit = 1 if zero_count == one_count and criteria(1, 0) else bit
-            bit = 0 if zero_count == one_count and criteria(0, 1) else bit
+            bit = 0 if criterion(zero_count, one_count) else 1
+            bit = 1 if zero_count == one_count and criterion(1, 0) else bit
+            bit = 0 if zero_count == one_count and criterion(0, 1) else bit
 
             selection = [selection[i] for i in index[bit]]
             
             bit_i = bit_i + 1
         
         result.append(selection[0])
-    
 
     oxygen, co2scrub = int(result[0], 2), int(result[1], 2)
 
