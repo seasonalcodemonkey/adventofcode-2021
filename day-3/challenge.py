@@ -16,7 +16,6 @@ def load_input(filename):
 def power_consumption(input):
     line, line_i = [], 0 
     line_len, line_count = len(input[0]), len(input)
-    common = [None for i in range(0, line_len)]
     count = [0 for i in range(0, line_len)]
     gamma, epsilon = 0, 0
     
