@@ -40,6 +40,9 @@ class BoardNum:
     def mark(self):
         self.marked = True
 
+    def unmark(self):
+        self.marked = False
+
 class Board:
     def __init__(self, board):
         self.num = {}
@@ -62,6 +65,11 @@ class Board:
         if number in self.num:
             for row, col in self.num[number]:
                 self.board[row][col].mark()
+
+    def unmark(self):
+        for row in range(0, self.rows):
+            for col in range(0, self.cols):
+                self.board[row][col].unmark()
 
     def check(self):
         for row in range(0, self.rows):
@@ -91,18 +99,32 @@ class Board:
 
         return sum
 
+    def print_marked(self):
+        marked = []
+
+        for row in range(0, self.rows):
+            for col in range(0, self.cols):
+                if self.board[row][col].marked:
+                    marked.append(self.board[row][col].value)
+
+        print(marked, len(marked))
+
         
 
-def bingo(number, board):
-    for i in range(0, len(board)):
-        board[i] = Board(board[i])
+def bingo(number, board, last_win = False):
+    win = None
 
     for num in number:
         for i in range(0, len(board)):
             board[i].mark(num)
 
-            if board[i].check():
-                return (board[i].sum_unmarked(),  num)
+            if not board[i].bingo and board[i].check():
+                if last_win:
+                    win = (board[i].sum_unmarked(), num)
+                else:
+                    return (board[i].sum_unmarked(),  num)
+    
+    return win
 
 
 if __name__ == "__main__":
@@ -113,7 +135,15 @@ if __name__ == "__main__":
         print("Could not load from %s: %s" % (filename, input)) 
     else:
         number, board = parse_input(input)
-        sum, number = bingo(number, board)
-        print("%i x %i %i" % (sum, number, sum * number))
-
         
+        for i in range(0, len(board)):
+            board[i] = Board(board[i])
+
+        sum, num = bingo(number, board)
+        print("First to win: %i x %i %i" % (sum, num, sum * num))
+        
+        for i in range(0, len(board)):
+            board[i].unmark()
+
+        sum, num = bingo(number, board, True)
+        print("Last to win: %i x %i %i" % (sum, num, sum * num))
