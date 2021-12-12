@@ -25,100 +25,98 @@ def parse_input(lines):
     
     return heatmap
 
-def low_points(heatmap):
-    len_x = len(heatmap)
-    len_y = len(heatmap[0])
-    lows = []
+class Grid:
+    def __init__(self, grid, len_x, len_y):
+        self.len_x = len_x
+        self.len_y = len_y
 
-    add_low = lambda x, y: lows.append([heatmap[x][y], (x+1,y+1)])
+        self.min_x, self.min_y  = 0, 0
+        self.max_y = self.len_y - 1
+        self.max_x = self.len_x - 1
 
-    #Corners
-    top_left = [(0, 0), [(1, 0), (0, 1)]]
-    top_right = [(len_x - 1, 0), [(len_x - 2, 0), (len_x - 1, 1)]]
-    bottom_left = [(0, len_y - 1), [(1, len_y - 1), (0, len_y - 2)]]
-    bottom_right = [(len_x - 1, len_y - 1), [(len_x - 2, len_y - 1), (len_x - 1, len_y - 2)]]
-    corners = [top_left, top_right, bottom_left, bottom_right]
+        self.grid = grid
 
-    xy, neighbour = 0, 1
-
-    for corner in corners:
-        x, y = corner[xy]
-        low = True
-
-        for n_x, n_y in corner[neighbour]:
-            if not heatmap[x][y] < heatmap[n_x][n_y]:
-                low = False
-                break
+        self.precompute_corners()
         
-        if low:
-            add_low(x, y)
-
-    #Top line
-    y = 0
-    for x in range(1, len_x - 1):
-        low = True
-
-        for n_x, n_y in [(x - 1, y), (x + 1, y), (x, y + 1)]:
-            if not heatmap[x][y] < heatmap[n_x][n_y]:
-                low = False
-                break
+    def precompute_corners(self):
+         self.corners = {
+        (0, 0): [(1, 0), (0, 1)], #top_left 
+        (self.max_x, 0): [(self.max_x - 1, 0), (self.max_x, 1)], #top_right 
+        (0, self.max_y): [(1, self.max_y), (0, self.max_y - 1)] , #bottom_left
+        (self.max_x, self.max_y): [(self.max_x - 1, self.max_y), (self.max_x, self.max_y - 1)] #bottom_right
+        }
+    
+    def adjacent(self, x, y):
+        #Corners
+        if (x, y) in self.corners:
+            return self.corners[(x, y)]
         
-        if low:
-            add_low(x, y)
+        if y == 0: #Top Line
+            return [(x - 1, y), (x + 1, y), (x, y + 1)]
 
-    #Bottom line
-    y = len_y - 1
-    for x in range(1, len_x - 1):
-        low = True
+        if y == self.max_y: #Bottom Line
+            return [(x - 1, y), (x + 1, y), (x, y - 1)]
 
-        for n_x, n_y in [(x - 1, y), (x + 1, y), (x, y - 1)]:
-            if not heatmap[x][y] < heatmap[n_x][n_y]:
-                low = False
-                break
+        if x == 0: #Left Line
+            return [(x, y - 1), (x, y + 1), (x + 1, y)]
         
-        if low:
-            add_low(x, y)
+        if x == self.max_x: #Right Line
+            return [(x, y - 1), (x, y + 1), (x - 1, y)]
 
-    #Left line
-    x = 0
-    for y in range(1, len_y - 1):
-        low = True
+        #Centre
+        return [(x - 1, y), (x + 1, y), (x, y + 1), (x, y - 1)]
 
-        for n_x, n_y in [(x, y - 1), (x, y + 1), (x + 1, y)]:
-            if not heatmap[x][y] < heatmap[n_x][n_y]:
-                low = False
-                break
+    def find_adjacent(self, x, y, criterion, ignore = []):
+        adjacents = self.adjacent(x, y)
+        matches = []
+
+        for a_x, a_y in adjacents:
+            if criterion(self.grid[x][y], self.grid[a_x][a_y]):
+                if (a_x, a_y) not in ignore:
+                    matches.append((a_x, a_y))
         
-        if low:
-            add_low(x, y)
+        return matches
 
-    #Right line
-    x = len_x - 1
-    for y in range(1, len_y - 1):
-        low = True
+    def find_lows(self):
+        lows = []
+        criterion = lambda o, a: o < a
 
-        for n_x, n_y in [(x, y - 1), (x, y + 1), (x - 1, y)]:
-            if not heatmap[x][y] < heatmap[n_x][n_y]:
-                low = False
-                break
-        
-        if low:
-            add_low(x, y)
+        for x in range(self.len_x):
+            for y in range(self.len_y):
+                adjacents = self.adjacent(x, y)
+                low = True
 
-    #Centre
-    for x in range(1, len_x - 1):
-        for y in range(1, len_y - 1):
-            low = True
+                for a_x, a_y in adjacents:
+                    if not criterion(self.grid[x][y], self.grid[a_x][a_y]):
+                        low = False
 
-            for n_x, n_y in [(x - 1, y), (x + 1, y), (x, y + 1), (x, y - 1)]:
-                if not heatmap[x][y] < heatmap[n_x][n_y]:
-                    low = False
-                    break
-            
-            if low:
-                add_low(x, y)
+                if low:
+                    lows.append([self.grid[x][y], (x, y)])
+        return lows
 
-    return lows
+    def find_basin(self, low):
+        x, y = low
+        adjacents = []
+        criterion = lambda o, a: a < 9
+
+        adjacents = self.find_adjacent(x, y, criterion)
+
+        for x, y in adjacents:
+            adjs = self.find_adjacent(x, y, criterion, adjacents)
+
+            for adj in adjs:
+                adjacents.append(adj) 
+
+        return adjacents 
+
+    def find_basins(self, lows):
+        basins = []
+
+        for low in lows:
+            basin = self.find_basin(low[1])
+            basins.append([low[1], len(basin), basin])
+
+        return basins
 
 def risk_level(low_points):
     sum = 0
@@ -128,6 +126,12 @@ def risk_level(low_points):
 
     return sum
 
+def product_three_largest(basins):
+    sizes = [i[1] for i in basins]
+    sizes.sort(reverse=True)
+
+    return sizes[0] * sizes[1] * sizes[2]
+
 if __name__ == "__main__":
     filename = "input"
     input = load_input(filename)
@@ -135,8 +139,12 @@ if __name__ == "__main__":
     if isinstance(input, Exception):
         print("Could not load from %s: %s" % (filename, input)) 
     else:
-        heatmap = parse_input(input)
-        lows = low_points(heatmap)
+        heightmap = parse_input(input)
+        heightmap = Grid(heightmap, len(heightmap), len(heightmap[0]))
+        
+        lows = heightmap.find_lows()
         print("Risk level score: %i " % risk_level(lows))
-
+        
+        basins = heightmap.find_basins(lows)
+        print("Product of three largest: %i" % product_three_largest(basins)) 
 
